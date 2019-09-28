@@ -1,13 +1,27 @@
 const http = require('http');
-http.createServer(onRequest). listen(3000);
+const fs = require('fs');
+const parseUrl = require('url-parse');
+
+const PORT = 3001;
+
+const options = {
+  key: fs.readFileSync('./key.pem'),
+  cert: fs.readFileSync('./cert.pem'),
+  passphrase: 'Klass575428'
+};
+
+http.createServer(onRequest).listen(PORT);
+console.log(`Server is listening ${PORT} port`);
 
 function onRequest(client_req, client_res) {
   console.log('serve: ' + client_req.url);
+  const parsedUrl = parseUrl(client_req.url);
+  console.log(parsedUrl);
 
   const options = {
-    hostname: 'www.google.com',
-    port: 80,
-    path: client_req.url,
+    hostname: parsedUrl.hostname,
+    port: parsedUrl.port || 80,
+    path: parsedUrl.pathname,
     method: client_req.method,
     headers: client_req.headers
   };

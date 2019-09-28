@@ -2,5 +2,8 @@
   "name": "http-proxy-server",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "url-parse": "^1.4.7"
+  }
 }
