@@ -1,16 +1,21 @@
-const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const parseUrl = require('url-parse');
 
-const PORT = 3001;
+const PORT = 443;
+
+const SNICallBack = (servername, cb) => {
+  console.log('here');
+};
 
 const options = {
+  SNICallBack,
   key: fs.readFileSync('./key.pem'),
   cert: fs.readFileSync('./cert.pem'),
   passphrase: 'Klass575428'
 };
 
-http.createServer(onRequest).listen(PORT);
+https.createServer(options, onRequest).listen(PORT);
 console.log(`Server is listening ${PORT} port`);
 
 function onRequest(client_req, client_res) {
@@ -26,7 +31,7 @@ function onRequest(client_req, client_res) {
     headers: client_req.headers
   };
 
-  const proxy = http.request(options, res => {
+  const proxy = https.request(options, res => {
     client_res.writeHead(res.statusCode, res.headers);
     res.pipe(client_res, {
       end: true
@@ -36,4 +41,4 @@ function onRequest(client_req, client_res) {
   client_req.pipe(proxy, {
     end: true
   })
-};
+}

@@ -3,7 +3,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "tsc": "tsc",
+    "dev": "ts-node-dev --respawn --transpileOnly ./src",
+    "prod": "tsc && node ./build"
+  },
   "dependencies": {
+    "ts-node-dev": "^1.0.0-pre.43",
+    "typescript": "^3.6.3",
     "url-parse": "^1.4.7"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.3.1",
+    "@typescript-eslint/parser": "^2.3.1",
+    "eslint": "^6.5.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2"
   }
 }
