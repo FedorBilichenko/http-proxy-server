@@ -19,5 +19,8 @@ module.exports = {
         "@typescript-eslint"
     ],
     "rules": {
+        "no-unused-vars": "off",
+        "no-console": "off",
+        "max-len": [1, 120, 2, { "ignoreComments": true } ]
     }
 };
