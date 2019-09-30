@@ -22,5 +22,13 @@ module.exports = {
         "no-unused-vars": "off",
         "no-console": "off",
         "max-len": [1, 120, 2, { "ignoreComments": true } ]
+    },
+    settings: {
+        "import/resolver": {
+            node: {
+                paths: ["src"],
+                extensions: [".ts"]
+            }
+        }
     }
 };

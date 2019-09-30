@@ -1,6 +1,5 @@
 import http, { RequestOptions } from 'http';
 import parseUrl from 'url-parse';
-import url from 'url';
 import net from 'net';
 
 const PORT: number = 3000;
