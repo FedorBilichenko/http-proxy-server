@@ -1,6 +1,7 @@
 import http, { RequestOptions } from 'http';
 import parseUrl from 'url-parse';
 import net from 'net';
+import onApiRequest from './api';
 
 const PORT: number = 3000;
 const DEFAULT_HTTP_PORT: number = 80;
@@ -12,6 +13,12 @@ const onClientRequest = (
   clientRes: http.ServerResponse,
 ) => {
   console.log(`server http request url: ${clientReq.url}`);
+
+  if (clientReq.url!.startsWith('/api')) {
+    onApiRequest(clientReq, clientRes);
+    return;
+  }
+
   const parsedUrl = parseUrl(clientReq.url!);
 
   const options: RequestOptions = {

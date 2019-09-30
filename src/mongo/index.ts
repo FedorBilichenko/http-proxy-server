@@ -1,4 +1,4 @@
-import Db from 'mongodb';
+import { Db } from 'mongodb';
 import mongoose from 'mongoose';
 
 const MONGO_CONNECTION = 'mongodb://localhost:27017/proxy-server';
