@@ -6,25 +6,18 @@ import parseUrl from 'url-parse';
 import { IncomingMessage, ServerResponse, ClientRequest } from 'http';
 import https, { RequestOptions } from 'https';
 
-import RequestModel from './mongo/models';
 import generateCertificate from './generateCertificate';
-
-const PORT: number = 443;
-const DEFAULT_HTTPS_PORT: number = 443;
-const HOST_NAME: string = 'localhost';
+import {
+  localHosts,
+  DEFAULT_HTTPS_PORT,
+  HOST_NAME,
+} from './config';
+import onApiRequest from './api';
+import saveRequest from './mongo/models';
 
 const httpsServerOptions: https.AgentOptions = {
   SNICallback: async (serverName: string, cb: any): any => {
     console.log(`SNICallback is called, hostname ${serverName}`);
-    const request = new RequestModel({
-      domain: serverName,
-      date: new Date(),
-      method: '',
-      status: '',
-    });
-
-    await request.save();
-    console.log(`Request to ${serverName} successfully added to db`);
 
     const keyPath = path.resolve(__dirname, '../keys', `${serverName}.key`);
     const certPath = path.resolve(__dirname, '../keys', `${serverName}.crt`);
@@ -45,13 +38,31 @@ const httpsServerOptions: https.AgentOptions = {
   },
 };
 
-const onClientRequest = (
+const onClientRequest = async (
   clientReq: IncomingMessage,
   clientRes: ServerResponse,
 ) => {
   console.log(`server https request url: ${clientReq.url}`);
 
   const parsedUrl = parseUrl(clientReq.url!);
+  const requestHostname = clientReq.headers.host!.split(':')[0];
+
+  await saveRequest({
+    hostname: requestHostname,
+    port: DEFAULT_HTTPS_PORT,
+    path: parsedUrl.pathname,
+    method: clientReq.method!,
+    headers: clientReq.headers,
+    date: new Date(),
+  });
+
+  if (localHosts.includes(parsedUrl.hostname)
+    && parsedUrl.pathname.startsWith('/api')
+    || !parsedUrl.hostname
+    && parsedUrl.pathname.startsWith('/api')) {
+    onApiRequest(clientReq, clientRes, true);
+    return;
+  }
 
   const options: RequestOptions = {
     hostname: clientReq.headers.host,
@@ -76,9 +87,9 @@ const onClientRequest = (
 
 export default () => {
   const httpsServer = https.createServer(httpsServerOptions, onClientRequest).listen(
-    PORT,
+    DEFAULT_HTTPS_PORT,
     HOST_NAME,
-    () => console.log(`Https-server is started on port ${PORT}`),
+    () => console.log(`Https-server is started on port ${DEFAULT_HTTPS_PORT}`),
   );
 
   httpsServer.on('tlsClientError', (err) => {

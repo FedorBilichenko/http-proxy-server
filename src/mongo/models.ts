@@ -2,10 +2,35 @@ import mongoose from 'mongoose';
 import { IRequest } from '../types/Request';
 
 const Request = new mongoose.Schema({
-  domain: String,
-  date: String,
+  hostname: String,
+  port: String,
+  path: String,
   method: String,
-  status: String,
+  headers: Object,
+  date: String,
 });
 
-export default mongoose.model<IRequest & mongoose.Document>('Request', Request);
+export const RequestModel = mongoose.model<IRequest & mongoose.Document>('Request', Request);
+
+export default async (
+  {
+    hostname,
+    port,
+    path,
+    method,
+    headers,
+    date,
+  }
+) => {
+  const request = new RequestModel({
+    hostname,
+    port,
+    path,
+    method,
+    headers,
+    date,
+  });
+
+  await request.save();
+  console.log(`Request to ${hostname} successfully added to db`);
+};

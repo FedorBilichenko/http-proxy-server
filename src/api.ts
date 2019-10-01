@@ -1,9 +1,23 @@
-import http, { ServerResponse } from 'http';
-import RequestModel from './mongo/models';
+import
+http,
+{
+  IncomingMessage,
+  RequestOptions,
+  ServerResponse,
+}
+  from 'http';
+import https from 'https';
+import parse from 'parse-url';
+import { RequestModel } from './mongo/models';
+
 
 const normalizeRequests = (rawRequests) => rawRequests.map((req) => ({
   id: req._id,
-  domain: req.domain,
+  hostname: req.hostname,
+  port: req.port,
+  path: req.path,
+  method: req.method,
+  date: req.date,
 }), []);
 
 
@@ -13,11 +27,47 @@ const getRequests = async (clientRes: ServerResponse) => {
   clientRes.end(JSON.stringify(normalizeRequests(requests)));
 };
 
-export default async (
-  clientReq: http.IncomingMessage,
-  clientRes: http.ServerResponse,
+const doRequest = async (
+  id: string,
+  clientReq: IncomingMessage,
+  clientRes: ServerResponse,
+  isHttps: boolean,
 ) => {
-  if (clientReq.url === '/api/requests') {
+  const request = await RequestModel.findById(id);
+
+  const options: RequestOptions = {
+    hostname: request.hostname,
+    port: request.port,
+    path: request.pathname,
+    method: request.method,
+    headers: request.headers,
+  };
+
+  const proxy: http.ClientRequest = (isHttps ? https : http).request(options, (res: any): any => {
+    clientRes.writeHead(res.statusCode, res.headers);
+
+    res.pipe(<NodeJS.WritableStream>clientRes, {
+      end: true,
+    });
+  });
+
+  clientReq.pipe(proxy, {
+    end: true,
+  });
+};
+
+export default async (
+  clientReq: IncomingMessage,
+  clientRes: ServerResponse,
+  isHttps: boolean,
+) => {
+  const parsedUrl = parse(clientReq.url);
+
+  if (parsedUrl.pathname === '/api/requests') {
     await getRequests(clientRes);
+    return;
+  }
+  if (parsedUrl.pathname.indexOf('/api/request') !== -1) {
+    await doRequest(parsedUrl.query.id, clientReq, clientRes, isHttps);
   }
 };

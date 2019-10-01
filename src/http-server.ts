@@ -2,24 +2,41 @@ import http, { RequestOptions } from 'http';
 import parseUrl from 'url-parse';
 import net from 'net';
 import onApiRequest from './api';
+import {
+  localHosts,
+  DEFAULT_HTTPS_PORT,
+  HOST_NAME,
+  DEFAULT_HTTP_PORT,
+  PORT,
+} from './config';
+import saveRequest from './mongo/models';
 
-const PORT: number = 3000;
-const DEFAULT_HTTP_PORT: number = 80;
-const DEFAULT_HTTPS_PORT: number = 443;
-const HOST_NAME: string = 'localhost';
-
-const onClientRequest = (
+const onClientRequest = async (
   clientReq: http.IncomingMessage,
   clientRes: http.ServerResponse,
 ) => {
   console.log(`server http request url: ${clientReq.url}`);
 
-  if (clientReq.url!.startsWith('/api')) {
-    onApiRequest(clientReq, clientRes);
+  const parsedUrl = parseUrl(clientReq.url!);
+
+  const requestHostname = clientReq.headers.host!.split(':')[0];
+
+  await saveRequest({
+    hostname: requestHostname,
+    port: DEFAULT_HTTP_PORT,
+    path: parsedUrl.pathname,
+    method: clientReq.method!,
+    headers: clientReq.headers,
+    date: new Date(),
+  });
+
+  if (localHosts.includes(parsedUrl.hostname)
+    && parsedUrl.pathname.startsWith('/api')
+    || !parsedUrl.hostname
+    && parsedUrl.pathname.startsWith('/api')) {
+    onApiRequest(clientReq, clientRes, false);
     return;
   }
-
-  const parsedUrl = parseUrl(clientReq.url!);
 
   const options: RequestOptions = {
     hostname: parsedUrl.hostname,
@@ -28,7 +45,6 @@ const onClientRequest = (
     method: clientReq.method!,
     headers: clientReq.headers,
   };
-
   const proxy: http.ClientRequest = http.request(options, (res: any): any => {
     clientRes.writeHead(res.statusCode, res.headers);
 
@@ -56,8 +72,11 @@ export default () => {
         + 'Proxy-agent: Node.js-Proxy\r\n'
         + '\r\n');
       srvSocket.write(head);
-      srvSocket.pipe(cltSocket);
-      cltSocket.pipe(srvSocket);
+      srvSocket
+        .on('error', () => console.log('srvSocket'))
+        .pipe(cltSocket)
+        .on('error', () => console.log('cltSocket'))
+        .pipe(srvSocket);
     });
   });
 };

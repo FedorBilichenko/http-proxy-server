@@ -21,6 +21,7 @@ module.exports = {
     "rules": {
         "no-unused-vars": "off",
         "no-console": "off",
+        "no-mixed-operators": "off",
         "max-len": [1, 120, 2, { "ignoreComments": true } ]
     },
     settings: {
